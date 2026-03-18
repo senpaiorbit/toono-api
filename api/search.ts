@@ -1,13 +1,12 @@
 // ============================================================
 //  api/search.ts  –  GET /api/search?q=<query>
-//                    GET /api/search?category=hindi&page=2
-// ============================================================
-//  Scrapes the site's search results page or a category listing.
+//                    GET /api/search?category=<cat>&page=<n>
 // ============================================================
 
-import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { CONFIG } from "../config.js";
-import { fetchHtml, matchAll, matchOne, decodeHtml, stripTags } from "../lib/utils.js";
+import { CONFIG } from "../config";
+import { fetchHtml, matchOne, decodeHtml, stripTags } from "../lib/utils";
+
+export const config = { runtime: "nodejs" };
 
 interface SearchResult {
   title: string;
@@ -21,72 +20,65 @@ interface SearchResult {
 
 function scrapeListingPage(html: string): SearchResult[] {
   const results: SearchResult[] = [];
-
-  // Each post card  <article class="post ...">
   const articles = html.split(/<article\s+class="post/).slice(1);
 
   for (const article of articles) {
-    // URL and slug from <a href="...">
     const url = matchOne(article, /href="(https:\/\/toono\.app\/(?:episode|series|movies)\/[^"]+)"/) ?? "";
     if (!url) continue;
 
-    const slug = url.replace(/\/$/, "").split("/").pop() ?? "";
-
-    // Title
+    const slug     = url.replace(/\/$/, "").split("/").pop() ?? "";
     const titleRaw = matchOne(article, /class="entry-title"[^>]*>([\s\S]*?)<\//) ?? "";
-    const title = decodeHtml(stripTags(titleRaw)).trim();
+    const title    = decodeHtml(stripTags(titleRaw)).trim();
+    const thumb    = matchOne(article, /<img[^>]*src="([^"]+)"[^>]*loading="lazy"/);
+    const year     = matchOne(article, /<span class="year">([^<]+)<\/span>/);
+    const rating   = matchOne(article, /<span class="rating[^"]*"><span>([^<]+)<\/span>/);
+    const lang     = matchOne(article, /<div class="language-tags">([^<]+)<\/div>/);
 
-    // Thumbnail
-    const thumb = matchOne(article, /<img[^>]*src="([^"]+)"[^>]*loading="lazy"/);
-
-    // Year
-    const year = matchOne(article, /<span class="year">([^<]+)<\/span>/);
-
-    // Rating
-    const rating = matchOne(article, /<span class="rating[^"]*"><span>([^<]+)<\/span>/);
-
-    // Language tag overlay
-    const lang = matchOne(article, /<div class="language-tags">([^<]+)<\/div>/);
-
-    results.push({ title, url, slug, thumbnail: thumb ?? null, year: year ?? null, rating: rating ?? null, language: lang?.trim() ?? null });
+    results.push({
+      title,
+      url,
+      slug,
+      thumbnail: thumb ?? null,
+      year: year ?? null,
+      rating: rating ?? null,
+      language: lang?.trim() ?? null,
+    });
   }
 
   return results;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ success: false, error: "Method not allowed" });
+export default async function handler(req: Request): Promise<Response> {
+  const { searchParams } = new URL(req.url);
+  const q        = searchParams.get("q");
+  const category = searchParams.get("category");
+  const page     = searchParams.get("page") ?? "1";
+
+  if (!q && !category) {
+    return json({ success: false, error: "Provide ?q= or ?category=" }, 400);
   }
 
-  const { q, category, page = "1" } = req.query as Record<string, string>;
-
-  let targetUrl: string;
-
-  if (q) {
-    // WordPress search
-    targetUrl = `${CONFIG.BASE_URL}/?s=${encodeURIComponent(q)}&paged=${page}`;
-  } else if (category) {
-    // Category page e.g. /category/hindi/page/2/
-    targetUrl = `${CONFIG.BASE_URL}/category/${encodeURIComponent(category)}/page/${page}/`;
-  } else {
-    return res.status(400).json({
-      success: false,
-      error: "Provide ?q= for search or ?category= for category listing",
-    });
-  }
+  const targetUrl = q
+    ? `${CONFIG.BASE_URL}/?s=${encodeURIComponent(q)}&paged=${page}`
+    : `${CONFIG.BASE_URL}/category/${encodeURIComponent(category!)}/page/${page}/`;
 
   try {
-    const html = await fetchHtml(targetUrl);
+    const html    = await fetchHtml(targetUrl);
     const results = scrapeListingPage(html);
-
-    return res.status(200).json({
+    return json({
       success: true,
-      data: { results, page: parseInt(page, 10), query: q ?? null, category: category ?? null },
+      data: { results, page: parseInt(page), q, category },
       scrapedAt: new Date().toISOString(),
     });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Unknown error";
-    return res.status(500).json({ success: false, error: msg });
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return json({ success: false, error: message }, 500);
   }
+}
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+  });
 }
