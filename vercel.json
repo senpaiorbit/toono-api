@@ -1,24 +1,5 @@
 {
   "version": 2,
-  "functions": {
-    "api/**/*.ts": {
-      "runtime": "@vercel/node@3.x"
-    }
-  },
-  "routes": [
-    {
-      "src": "/api/episode",
-      "dest": "/api/episode.ts"
-    },
-    {
-      "src": "/api/series",
-      "dest": "/api/series.ts"
-    },
-    {
-      "src": "/api/search",
-      "dest": "/api/search.ts"
-    }
-  ],
   "headers": [
     {
       "source": "/api/(.*)",
