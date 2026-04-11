@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Secure Loader</title>
+    <style>
+        iframe { width: 100%; height: 600px; border: none; }
+    </style>
+</head>
+<body>
+
+    <div class="iframe-responsive-container"><iframe
+                                    id="main-player"
+                                   
+                                    frameborder="0"
+                                    scrolling="no"
+                                    seamless="seamless"
+                                    allowtransparency="true"
+                                    marginwidth="0"
+                                    marginheight="0"
+                                    vspace="0"
+                                    hspace="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowfullscreen
+                                    data-player data-lazy-src="https://toono.app/?trembed=1&trid=47709&trtype=2"></iframe></div>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"d56c29a3f2de493eb5c5eba20360fbf4","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+
+<!-- <script>
+        async function loadIframe() {
+            const iframe = document.getElementById('hiddenIframe');
+            
+            try { 
+                // 1. Fetch the content from your PHP proxy
+                const response = await fetch('proxy.php');
+                const htmlContent = await response.text();
+
+                // 2. Inject the content into the "about:blank" document
+                const doc = iframe.contentWindow.document;
+                doc.open();
+                doc.write(htmlContent);
+                doc.close();
+            } catch (err) {
+                console.error("Failed to load content:", err);
+            }
+        }
+
+        // Run the loader when the page loads
+        window.onload = loadIframe;
+    </script> -->
+</body>
+</html>
