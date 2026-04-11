@@ -1,12 +1,16 @@
 // ============================================================
-//  api/series.ts  –  GET /api/series?url=<series-url>
-//                    GET /api/series?slug=<slug>
+//  api/episode.ts  –  GET /api/episode?url=<episode-url>
+//                     GET /api/episode?slug=<slug>
+// ============================================================
+//  Query params (one required):
+//    url   – full episode URL
+//    slug  – slug only, e.g. "the-angel-next-door-spoils-me-rotten-1x1"
 // ============================================================
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { CONFIG } from "../config.js";
-import { fetchHtml } from "../lib/utils.js";
-import { scrapeMeta, scrapeSeasons } from "../lib/scraper.js";
+import { fetchHtml, okResponse, errResponse } from "../lib/utils.js";
+import { scrapeEpisodePage } from "../lib/scraper.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "GET") {
@@ -20,7 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (url) {
     targetUrl = url;
   } else if (slug) {
-    targetUrl = `${CONFIG.BASE_URL}${CONFIG.ROUTES.series}${slug}/`;
+    targetUrl = `${CONFIG.BASE_URL}${CONFIG.ROUTES.episode}${slug}/`;
   } else {
     return res.status(400).json({
       success: false,
@@ -30,13 +34,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const html = await fetchHtml(targetUrl);
+    const data = scrapeEpisodePage(html);
 
     return res.status(200).json({
       success: true,
-      data: {
-        meta:    scrapeMeta(html),
-        seasons: scrapeSeasons(html),
-      },
+      data,
       scrapedAt: new Date().toISOString(),
     });
   } catch (err: unknown) {
