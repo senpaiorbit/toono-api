@@ -1,46 +1,35 @@
-// api/movies.js — GET /api/movies  |  GET /api/movies?slug=chainsaw-man-the-movie-reze-arc
-//
-// Without slug  → scrapes /movies/ list (paginated via ?page=N)
-// With slug     → scrapes /movies/{slug}/ detail with player tabs
+// api/movies.js
+// GET /api/movies                    → list  (?page=N)
+// GET /api/movies?slug=<slug>        → detail with player tabs
+// GET /api/movies?category=<slug>    → category filter (?page=N)
 
 import { fetchPage } from '../lib/scraper.js';
-import { parseMoviesListPage, parseMovieDetailPage } from '../lib/parser.js';
-import { apiResponse, apiError } from '../lib/formatter.js';
+import { parseListPage, parseMovieDetailPage } from '../lib/parser.js';
+import { apiOk, apiError } from '../lib/formatter.js';
+import cfg from '../src/config.js';
 
 export const config = { runtime: 'nodejs' };
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    return res.status(405).json(apiError('Method not allowed', 405));
-  }
-
+  if (req.method !== 'GET') return res.status(405).json(apiError('Method not allowed', 405));
   const { slug, page = '1', category } = req.query;
-
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
   try {
     let html, data;
-
     if (slug) {
-      // ── Movie detail page ────────────────────────────────────────────
       html = await fetchPage(`/movies/${slug}/`);
       data = parseMovieDetailPage(html);
     } else if (category) {
-      // ── Category filter e.g. ?category=animation ─────────────────────
-      const pageNum = Math.max(1, parseInt(page, 10) || 1);
-      const path = pageNum > 1
-        ? `/category/${category}/page/${pageNum}/`
-        : `/category/${category}/`;
+      const path = pageNum > 1 ? `/category/${category}/page/${pageNum}/` : `/category/${category}/`;
       html = await fetchPage(path);
-      data = parseMoviesListPage(html);
+      data = parseListPage(html);
     } else {
-      // ── Movies archive list ──────────────────────────────────────────
-      const pageNum = Math.max(1, parseInt(page, 10) || 1);
       const path = pageNum > 1 ? `/movies/page/${pageNum}/` : `/movies/`;
       html = await fetchPage(path);
-      data = parseMoviesListPage(html);
+      data = parseListPage(html);
     }
-
-    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
-    return res.status(200).json(apiResponse(data, { slug: slug || null, page: parseInt(page, 10) || 1 }));
+    res.setHeader('Cache-Control', cfg.CACHE_CONTROL);
+    return res.status(200).json(apiOk(data, { slug: slug || null, page: pageNum }));
   } catch (err) {
     console.error('[/api/movies]', err.message);
     return res.status(500).json(apiError(err.message));
