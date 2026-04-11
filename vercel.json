@@ -1,10 +1,11 @@
 {
   "version": 2,
-  "routes": [
-    { "src": "/api/home",     "dest": "/api/home.js"     },
-    { "src": "/api/series",   "dest": "/api/series.js"   },
-    { "src": "/api/movies",   "dest": "/api/movies.js"   },
-    { "src": "/api/search",   "dest": "/api/search.js"   },
-    { "src": "/api/category", "dest": "/api/category.js" }
+  "rewrites": [
+    { "source": "/api/home",     "destination": "/api/home.js"     },
+    { "source": "/api/series",   "destination": "/api/series.js"   },
+    { "source": "/api/movies",   "destination": "/api/movies.js"   },
+    { "source": "/api/search",   "destination": "/api/search.js"   },
+    { "source": "/api/category", "destination": "/api/category.js" },
+    { "source": "/api/watch",    "destination": "/api/watch.js"    }
   ]
 }
