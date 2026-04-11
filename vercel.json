@@ -1,15 +1,10 @@
 {
   "version": 2,
-  "outputDirectory": ".",
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET, OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type" },
-        { "key": "Cache-Control", "value": "s-maxage=300, stale-while-revalidate=600" }
-      ]
-    }
+  "routes": [
+    { "src": "/api/home",     "dest": "/api/home.js"     },
+    { "src": "/api/series",   "dest": "/api/series.js"   },
+    { "src": "/api/movies",   "dest": "/api/movies.js"   },
+    { "src": "/api/search",   "dest": "/api/search.js"   },
+    { "src": "/api/category", "dest": "/api/category.js" }
   ]
 }
